@@ -33,7 +33,7 @@ services:
           aliases:
             - app_server
     healthcheck:
-      test: ["CMD-SHELL", "python3 --version"]
+      test: ["CMD-SHELL", "curl -f http://localhost:4242/ || exit 1"]
       interval: 2s
       timeout: 5s
       retries: 10
