@@ -11,7 +11,7 @@ services:
         aliases:
           - sql_server
     volumes:
-      - url-shortener-db:/var/lib/postgresql
+      - url-shortener-db:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d ${POSTGRES_DB}"]
       interval: 2s
@@ -26,8 +26,6 @@ services:
       - 127.0.0.1:4242:4242
     env_file:
       - .env
-    volumes:
-      - ./:/app
     networks:
         app_network:
           aliases:
@@ -45,8 +43,6 @@ services:
         app_network:
           aliases:
             - nginx_server
-      volumes:
-        - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       depends_on:
         app:
           condition: service_healthy
