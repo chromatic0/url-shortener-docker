@@ -36,7 +36,11 @@ services:
   nginx:
       build: ./nginx
       ports:
-      - 80:80
+        - 80:7777
+        - 443:443
+      volumes:
+        - certbot-etc:/etc/letsencrypt
+        - certbot-www:/var/www/certbot
       networks:
         app_network:
           aliases:
@@ -44,9 +48,19 @@ services:
       depends_on:
         app:
           condition: service_healthy
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: >
+      sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"
+    
 
 networks:
   app_network:
 
 volumes:
   url-shortener-db:
+  certbot-etc:
+  certbot-www:
