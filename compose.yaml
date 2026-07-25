@@ -13,7 +13,7 @@ services:
     volumes:
       - url-shortener-db:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d {POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d ${POSTGRES_DB}"]
       interval: 2s
       timeout: 5s
       retries: 10
