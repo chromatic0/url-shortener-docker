@@ -63,7 +63,8 @@ def generate_url():
             cursor = conn.cursor()
             cursor.execute(sql_query, (token, url))
             conn.commit()
-            return f"New URL: {url_for('redirect_to_url', code=token, _external = True)}"
+            short_url = url_for('redirect_to_url', code=token, _external=True)
+            return render_template('index.html', short_url=short_url)
         except Exception as e:
             print(e)
             return "An error has occured", 500
