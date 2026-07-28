@@ -131,6 +131,17 @@ input[type="submit"]:active {
     background: #f5f5f4;
 }
 
+.error {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.error label {
+    color: #ff4242;
+}
+
 .footnote {
     padding: 0 40px 28px;
     text-align: left;
@@ -159,6 +170,12 @@ input[type="submit"]:active {
     <div class="result">
         <label>Your short link</label>
         <input type="text" value="{{ short_url }}" readonly onclick="this.select()">
+        </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="error">
+        <label>{{ error }}</label>
         </div>
     {% endif %}
     </div>

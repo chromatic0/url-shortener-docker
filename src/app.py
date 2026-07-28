@@ -1,8 +1,9 @@
-from flask import Flask, request, render_template, url_for, redirect
+from flask import Flask, request, render_template, url_for, redirect, flash, get_flashed_messages
 import psycopg2, hashlib, os
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
+app.secret_key = "some-secret-key"
 
 app.wsgi_app = ProxyFix(
     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
@@ -73,7 +74,10 @@ def generate_url():
                 cursor.close()
             if conn is not None:
                 conn.close()
-    return render_template('index.html')
+    messages = get_flashed_messages()
+    error_msg = messages[0] if messages else None
+    return render_template('index.html', error=error_msg)
+
 
 @app.route('/<code>')
 def redirect_to_url(code):
@@ -87,11 +91,12 @@ def redirect_to_url(code):
         row = cursor.fetchone()
 
         if row is None:
-            return "Redirect Not Found!", 404
+            flash("Redirect not found!")
+            return redirect(url_for('generate_url'))
         return redirect(row[0])
     except Exception as e:
-        print(e)
-        return "An error has occured", 500
+        
+        return e, 500
     finally:
         if cursor is not None:
             cursor.close()
@@ -100,4 +105,4 @@ def redirect_to_url(code):
 
 if __name__ == '__main__':
     init_db()
-    app.run(host="0.0.0.0", port=4242)
+    app.run(host="0.0.0.0", port=4242, debug=True)
