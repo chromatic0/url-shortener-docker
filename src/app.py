@@ -53,30 +53,37 @@ def generate_url():
     if request.method == 'POST':
         conn = None
         cursor = None
+        url = request.form.get('url')
         try:
             conn = connect()
-            url = request.form['url']
+            requested_url = request.form['url']
             if not url.startswith(('http://', 'https://')):
-                url = 'https://' + url
+                requested_url = 'https://' + url
             token = generate_token(url)
             sql_query = """INSERT INTO url (token, redirect)
                         VALUES (%s, %s) ON CONFLICT DO NOTHING;"""
             cursor = conn.cursor()
-            cursor.execute(sql_query, (token, url))
+            cursor.execute(sql_query, (token, requested_url))
             conn.commit()
-            short_url = url_for('redirect_to_url', code=token, _external=True)
-            return render_template('index.html', short_url=short_url)
-        except Exception as e:
-            print(e)
-            return "An error has occured", 500
+            flash(token, "short_url")
+        except:
+            flash("An error has occured.", "error")
         finally:
             if cursor is not None:
                 cursor.close()
             if conn is not None:
                 conn.close()
-    messages = get_flashed_messages()
-    error_msg = messages[0] if messages else None
-    return render_template('index.html', error=error_msg)
+        return redirect(url_for('generate_url'))
+
+    messages = get_flashed_messages(with_categories=True)
+    short_url = None
+    error = None
+    for category, msg in messages:
+        if category == 'error':
+            error = msg
+        elif category == 'short_url':
+            short_url = url_for('redirect_to_url', code=msg, _external=True)
+    return render_template('index.html', short_url=short_url, error=error)
 
 
 @app.route('/<code>')
@@ -91,7 +98,7 @@ def redirect_to_url(code):
         row = cursor.fetchone()
 
         if row is None:
-            flash("Redirect not found!")
+            flash("Redirect not found.", "error")
             return redirect(url_for('generate_url'))
         return redirect(row[0])
     except Exception as e:
