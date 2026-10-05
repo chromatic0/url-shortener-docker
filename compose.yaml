@@ -1,66 +1,35 @@
 services:
   postgres:
-    image: postgres
-    env_file: .env
+    image: postgres:18
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    networks:
-      app_network:
-        aliases:
-          - sql_server
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
     volumes:
       - url-shortener-db:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 2s
       timeout: 5s
       retries: 10
+
   app:
+    build: ./src
     depends_on:
       postgres:
         condition: service_healthy
-    build: ./src
-    env_file:
-      - .env
-    networks:
-        app_network:
-          aliases:
-            - app_server
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: postgres
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4242/ || exit 1"]
-      interval: 2s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4242/health', timeout=3)"]
+      interval: 5s
       timeout: 5s
       retries: 10
-  nginx:
-      build: ./nginx
-      ports:
-        - 80:80
-        - 443:443
-      volumes:
-        - certbot-etc:/etc/letsencrypt
-        - certbot-www:/var/www/certbot
-      networks:
-        app_network:
-          aliases:
-            - nginx_server
-      depends_on:
-        app:
-          condition: service_healthy
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - certbot-etc:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
-    entrypoint: >
-      sh -c "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"
-    
-
-networks:
-  app_network:
+      start_period: 5s
 
 volumes:
   url-shortener-db:
-  certbot-etc:
-  certbot-www:

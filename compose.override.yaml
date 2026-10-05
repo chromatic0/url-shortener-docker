@@ -1,0 +1,4 @@
+services:
+  app:
+    ports:
+      - "8080:4242"   # open http://localhost:8080
